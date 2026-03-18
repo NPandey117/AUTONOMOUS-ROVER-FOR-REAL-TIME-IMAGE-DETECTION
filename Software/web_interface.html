@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Autonomous Bot Dashboard</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #121212; 
+            color: #fff; 
+            text-align: center; 
+            transition: background-color 0.3s ease;
+        }
+        .dashboard { max-width: 900px; margin: auto; padding: 20px; }
+        .video-feed { 
+            border: 4px solid #00ff00; 
+            width: 640px; 
+            height: 480px; 
+            background-color: #000; 
+            margin: 20px auto; 
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+        .stats { 
+            text-align: left; 
+            background: #1e1e1e; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 20px;
+            border-left: 6px solid #00ff00;
+        }
+        .highlight { color: #00ff00; font-weight: bold; font-size: 1.2em; }
+        
+        /* Badge List Styles */
+        #card_list_display { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            list-style: none; 
+            padding: 0; 
+            margin-top: 15px;
+        }
+        .card-badge {
+            background: #333;
+            color: #ffaa00;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid #ffaa00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn { 
+            background-color: #ff4444; 
+            color: white; 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: #cc0000; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>Bot Vision System v2.0</h1>
+
+        <div class="stats">
+            <p>⏱ Mission Time: <span id="time_elapsed" class="highlight">00:00</span></p>
+            <p>🎴 Unique Cards Found: <span id="cards_count" class="highlight">0</span> / 12</p>
+            <hr style="border: 0.5px solid #333; margin: 15px 0;">
+            <p><strong>Found Items:</strong></p>
+            <ul id="card_list_display">
+                <li style="color: #666;">Waiting for camera detection...</li>
+            </ul>
+        </div>
+
+        <img class="video-feed" src="/video_feed" alt="Bot Camera Feed Offline">
+
+        <br>
+        <button class="btn" onclick="resetBot()">RESET BOT MEMORY</button>
+    </div>
+
+    <script>
+        function updateStats() {
+            fetch('/get_stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cards_count').innerText = data.cards_detected;
+                    document.getElementById('time_elapsed').innerText = data.time_elapsed;
+
+                    const listContainer = document.getElementById('card_list_display');
+                    
+                    if (data.detected_names && data.detected_names.length > 0) {
+                        listContainer.innerHTML = ""; 
+                        data.detected_names.sort().forEach(name => {
+                            const li = document.createElement('li');
+                            li.className = 'card-badge';
+                            li.innerText = name;
+                            listContainer.appendChild(li);
+                        });
+                    } else {
+                        listContainer.innerHTML = "<li style='color: #666;'>Waiting for camera detection...</li>";
+                    }
+                })
+                .catch(err => console.error("Update error:", err));
+        }
+
+        // Fetch stats every 1 second
+        setInterval(updateStats, 1000);
+
+        function resetBot() {
+            if(confirm("Wipe mission data and restart timer?")) {
+                fetch('/reset', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Visual feedback: Flash the background red
+                        document.body.style.backgroundColor = "#441111";
+                        setTimeout(() => document.body.style.backgroundColor = "#121212", 300);
+                        updateStats(); // Force UI update immediately
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
