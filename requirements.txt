@@ -1,0 +1,30 @@
+# --- Perception & Computer Vision ---
+ultralytics      # Core YOLO framework for inference 
+opencv-python    # Image processing and camera handling 
+ncnn             # Optimized C++ inference engine for Raspberry Pi 
+
+# --- Web Dashboard & Telemetry ---
+Flask            # Web server for the MJPEG stream and dashboard 
+
+# --- Training ---
+roboflow         # Dataset management and acquisition 
+kaggle           # for training 
+torch            # PyTorch backend for initial model training 
+
+1. Model Training & Cloud Workflow
+
+Kaggle Environment: The model training was executed on Kaggle to leverage dedicated GPU acceleration for the 100-epoch training cycle.
+Transfer Learning: Utilized the yolo26n.pt (Nano) architecture as a foundation, performing transfer learning on a dataset of 8,828 images to achieve high precision for the 16 target classes.
+Kaggle-to-Edge Pipeline: After training, the PyTorch weights (.pt) were exported directly from the Kaggle environment to the NCNN format to ensure compatibility with the Raspberry Pi’s hardware constraints.
+
+2. Onboard Edge Optimization
+
+NCNN Inference Engine: The system uses the NCNN framework, written in optimized C++, to eliminate "Python overhead". This allows the Raspberry Pi 4 to dedicate nearly 100% of its CPU resources to neural network mathematics rather than environment management.
+Memory Management: The detection script utilizes stream=True during the model.predict call to keep RAM usage at a minimum, which is critical for maintaining the 5-minute run duration.
+Resolution Scaling: Camera input is locked at $640 \times 480$ resolution to balance detection accuracy with the processing power of the Pi 4.
+
+3. Environment & Deployment
+
+Virtual Environments: Deployment on the Raspberry Pi is managed via a Python virtual environment (venv) to prevent version conflicts with the Raspberry Pi OS system libraries.
+MJPEG Streaming: To conserve resources, the live dashboard uses the MJPEG protocol, encoding processed frames as sequential JPEGs rather than a compressed video stream.
+Deduplication Logic: A Python set() is implemented in app.py to track unique Class IDs, ensuring each of the 16 image cards is only counted once, regardless of how many frames it appears in.
